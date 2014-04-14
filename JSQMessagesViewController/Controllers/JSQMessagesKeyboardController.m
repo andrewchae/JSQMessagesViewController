@@ -153,7 +153,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     [self jsq_setKeyboardViewHidden:NO];
     
     [self jsq_handleKeyboardNotification:notification completion:^(BOOL finished) {
-        [self.panGestureRecognizer addTarget:self action:@selector(jsq_handlePanGestureRecognizer:)];
+//        [self.panGestureRecognizer addTarget:self action:@selector(jsq_handlePanGestureRecognizer:)];
     }];
 }
 
