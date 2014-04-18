@@ -48,6 +48,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 @property (strong, nonatomic) JSQMessagesKeyboardController *keyboardController;
 
 @property (assign, nonatomic) CGFloat statusBarChangeInHeight;
+@property (assign, nonatomic) BOOL isPushSegue;
 
 - (void)jsq_prepareMessagesViewController;
 
@@ -189,6 +190,29 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     [super viewDidDisappear:animated];
     [self jsq_removeObservers];
     [self.keyboardController endListeningForKeyboard];
+    
+    self.isPushSegue = NO;
+}
+
+- (void)beginAppearanceTransition:(BOOL)isAppearing animated:(BOOL)animated
+{
+    [super beginAppearanceTransition:isAppearing animated:animated];
+    
+    if (!self.isPushSegue) {
+        [self.keyboardController beginAppearanceTransition:isAppearing animated:animated viewController:self];
+    }
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    [super prepareForSegue:segue sender:sender];
+    
+    if ([segue.destinationViewController isKindOfClass:UINavigationController.class]) {
+        [self.keyboardController resignFirstResponder];
+    }
+    else {
+        self.isPushSegue = YES;
+    }
 }
 
 - (void)didReceiveMemoryWarning

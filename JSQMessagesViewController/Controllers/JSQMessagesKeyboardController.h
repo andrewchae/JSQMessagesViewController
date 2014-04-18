@@ -99,4 +99,14 @@
  */
 - (void)endListeningForKeyboard;
 
+/**
+ *  Tells the keyboard controller to resign first responder.
+ */
+- (void)resignFirstResponder;
+
+/**
+ *  Tells the keyboard controller that an appearance transition is beginning.
+ */
+- (void)beginAppearanceTransition:(BOOL)isAppearing animated:(BOOL)animated viewController:(UIViewController *)viewController;
+
 @end

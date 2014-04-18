@@ -22,6 +22,7 @@
 //
 
 #import "JSQMessagesKeyboardController.h"
+#import <QuartzCore/CAAnimation.h>
 
 static void * kJSQMessagesKeyboardControllerKeyValueObservingContext = &kJSQMessagesKeyboardControllerKeyValueObservingContext;
 
@@ -32,6 +33,8 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 @interface JSQMessagesKeyboardController () <UIGestureRecognizerDelegate>
 
 @property (weak, nonatomic) UIView *keyboardView;
+
+@property (assign, nonatomic) BOOL isResigningFirstResponder;
 
 - (void)jsq_registerForNotifications;
 - (void)jsq_unregisterForNotifications;
@@ -68,6 +71,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
         _contextView = contextView;
         _panGestureRecognizer = panGestureRecognizer;
         _delegate = delegate;
+        _isResigningFirstResponder = NO;
     }
     return self;
 }
@@ -115,6 +119,39 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     [self jsq_unregisterForNotifications];
 }
 
+- (void)resignFirstResponder
+{
+    if ([self.textView isFirstResponder]) {
+        self.isResigningFirstResponder = YES;
+        [self.textView resignFirstResponder];
+    }
+}
+
+- (void)beginAppearanceTransition:(BOOL)isAppearing animated:(BOOL)animated viewController:(UIViewController *)viewController
+{
+    if (!animated) {
+        return;
+    }
+    
+    if (!_keyboardView) {
+        return;
+    }
+    
+    __block UIView *keyboardView = _keyboardView;
+    [self jsq_unregisterForNotifications];
+    [self jsq_removeKeyboardFrameObserver];
+    [self.textView becomeFirstResponder];
+    [viewController.transitionCoordinator animateAlongsideTransitionInView:keyboardView animation:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        UIView* fromView = [[context viewControllerForKey:UITransitionContextFromViewControllerKey] view];
+        CGRect endFrame = keyboardView.frame;
+        endFrame.origin.x = fromView.frame.origin.x;
+        keyboardView.frame = endFrame;
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self jsq_registerForNotifications];
+        self.keyboardView = keyboardView;
+    }];
+}
+
 #pragma mark - Notifications
 
 - (void)jsq_registerForNotifications
@@ -149,7 +186,9 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
 - (void)jsq_didReceiveKeyboardDidShowNotification:(NSNotification *)notification
 {
-    self.keyboardView = self.textView.inputAccessoryView.superview;
+    if (self.textView.inputAccessoryView.superview) {
+        self.keyboardView = self.textView.inputAccessoryView.superview;
+    }
     [self jsq_setKeyboardViewHidden:NO];
     
     [self jsq_handleKeyboardNotification:notification completion:^(BOOL finished) {
@@ -172,6 +211,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 - (void)jsq_didReceiveKeyboardDidHideNotification:(NSNotification *)notification
 {
     self.keyboardView = nil;
+    self.isResigningFirstResponder = NO;
     
     [self jsq_handleKeyboardNotification:notification completion:^(BOOL finished) {
         [self.panGestureRecognizer removeTarget:self action:NULL];
@@ -185,7 +225,20 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 {
     NSDictionary *userInfo = [notification userInfo];
     
+    CGRect keyboardBeginFrame = [userInfo[UIKeyboardFrameBeginUserInfoKey] CGRectValue];
     CGRect keyboardEndFrame = [userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    
+    if (CGRectEqualToRect(keyboardBeginFrame, keyboardEndFrame)) {
+        return;
+    }
+    else if ([self.textView isFirstResponder]
+             && !self.isResigningFirstResponder
+             && ((keyboardEndFrame.origin.x != INFINITY && keyboardBeginFrame.origin.x != keyboardEndFrame.origin.x)
+                 || (keyboardEndFrame.origin.y != INFINITY && keyboardEndFrame.origin.y > keyboardBeginFrame.origin.y))) {
+                 
+                 return;
+             }
+    
     UIViewAnimationCurve animationCurve = [userInfo[UIKeyboardAnimationCurveUserInfoKey] integerValue];
     double animationDuration = [userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
     
@@ -224,6 +277,11 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
             CGRect newKeyboardFrameSize = [[change objectForKey:NSKeyValueChangeNewKey] CGRectValue];
             
             if (CGRectEqualToRect(newKeyboardFrameSize, oldKeyboardFrameSize)) {
+                return;
+            }
+            
+            CAAnimation *animation = [((CALayer *) self.keyboardView.layer.presentationLayer) animationForKey:@"position"];
+            if (animation && animation.duration == 0.5f && [self.textView isFirstResponder] && !self.isResigningFirstResponder) {
                 return;
             }
             
