@@ -252,6 +252,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 {
     [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     [self jsq_prepareForRotation];
+    
     // TODO: deal with keyboard on rotation
 }
 
@@ -259,10 +260,9 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 {
     // TODO: deal with keyboard on rotation
     
-    self.statusBarChangeInHeight = 0.0f;
     [self.inputToolbar.contentView.textView resignFirstResponder];
-    
     [self.collectionView.collectionViewLayout invalidateLayout];
+    [self.collectionView reloadData];
 }
 
 #pragma mark - Messages view controller
@@ -521,6 +521,10 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     CGRect currentStatusBarFrame = [UIApplication sharedApplication].statusBarFrame;
     CGFloat statusBarHeightDelta = CGRectGetHeight(currentStatusBarFrame) - CGRectGetHeight(previousStatusBarFrame);
     self.statusBarChangeInHeight = MAX(statusBarHeightDelta, 0.0f);
+    
+    if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)) {
+        self.statusBarChangeInHeight = 0.0f;
+    }
 }
 
 #pragma mark - Key-value observing
@@ -539,7 +543,9 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
         
             [self jsq_adjustInputToolbarForComposerTextViewContentSizeChange:dy];
             [self jsq_updateCollectionViewInsets];
-            [self scrollToBottomAnimated:NO];
+            if (self.automaticallyScrollsToMostRecentMessage) {
+                [self scrollToBottomAnimated:NO];
+            }
         }
     }
 }
