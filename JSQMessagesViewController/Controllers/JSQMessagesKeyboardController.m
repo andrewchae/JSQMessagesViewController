@@ -22,7 +22,6 @@
 //
 
 #import "JSQMessagesKeyboardController.h"
-#import <QuartzCore/CAAnimation.h>
 
 static void * kJSQMessagesKeyboardControllerKeyValueObservingContext = &kJSQMessagesKeyboardControllerKeyValueObservingContext;
 
@@ -281,7 +280,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
             }
             
             CAAnimation *animation = [((CALayer *) self.keyboardView.layer.presentationLayer) animationForKey:@"position"];
-            if (animation && animation.duration == 0.5f && [self.textView isFirstResponder] && !self.isResigningFirstResponder) {
+            if (animation && [[animation.timingFunction description] isEqualToString:kCAMediaTimingFunctionLinear] && [self.textView isFirstResponder] && !self.isResigningFirstResponder) {
                 return;
             }
             
