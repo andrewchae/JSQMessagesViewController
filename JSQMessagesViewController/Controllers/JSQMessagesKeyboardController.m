@@ -32,6 +32,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 @interface JSQMessagesKeyboardController () <UIGestureRecognizerDelegate>
 
 @property (weak, nonatomic) UIView *keyboardView;
+@property (weak, nonatomic) UIView *transitionKeyboardView;
 
 @property (assign, nonatomic) BOOL isResigningFirstResponder;
 
@@ -84,6 +85,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     _panGestureRecognizer = nil;
     _delegate = nil;
     _keyboardView = nil;
+    _transitionKeyboardView = nil;
 }
 
 #pragma mark - Setters
@@ -136,18 +138,17 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
         return;
     }
     
-    __block UIView *keyboardView = _keyboardView;
+    self.transitionKeyboardView = _keyboardView;
     [self jsq_unregisterForNotifications];
     [self jsq_removeKeyboardFrameObserver];
     [self.textView becomeFirstResponder];
-    [viewController.transitionCoordinator animateAlongsideTransitionInView:keyboardView animation:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+    [viewController.transitionCoordinator animateAlongsideTransitionInView:self.transitionKeyboardView animation:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         UIView* fromView = [[context viewControllerForKey:UITransitionContextFromViewControllerKey] view];
-        CGRect endFrame = keyboardView.frame;
+        CGRect endFrame = self.transitionKeyboardView.frame;
         endFrame.origin.x = fromView.frame.origin.x;
-        keyboardView.frame = endFrame;
+        self.transitionKeyboardView.frame = endFrame;
     } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self jsq_registerForNotifications];
-        self.keyboardView = keyboardView;
     }];
 }
 
@@ -185,7 +186,20 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
 - (void)jsq_didReceiveKeyboardDidShowNotification:(NSNotification *)notification
 {
-    if (self.textView.inputAccessoryView.superview) {
+    NSDictionary *userInfo = [notification userInfo];
+    
+    CGRect keyboardBeginFrame = [userInfo[UIKeyboardFrameBeginUserInfoKey] CGRectValue];
+    CGRect keyboardEndFrame = [userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    
+    if (CGRectEqualToRect(keyboardBeginFrame, keyboardEndFrame)) {
+        return;
+    }
+    
+    if (self.transitionKeyboardView) {
+        self.keyboardView = self.transitionKeyboardView;
+        self.transitionKeyboardView = nil;
+    }
+    else if (self.textView.inputAccessoryView.superview) {
         self.keyboardView = self.textView.inputAccessoryView.superview;
     }
     [self jsq_setKeyboardViewHidden:NO];
