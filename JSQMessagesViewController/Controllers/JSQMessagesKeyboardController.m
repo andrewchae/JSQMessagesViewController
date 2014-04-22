@@ -246,9 +246,12 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     }
     else if ([self.textView isFirstResponder]
              && !self.isResigningFirstResponder
-             && ((keyboardEndFrame.origin.x != INFINITY && keyboardBeginFrame.origin.x != keyboardEndFrame.origin.x)
-                 || (keyboardEndFrame.origin.y != INFINITY && keyboardEndFrame.origin.y > keyboardBeginFrame.origin.y))) {
+             && ((keyboardBeginFrame.origin.x != INFINITY && keyboardEndFrame.origin.x != INFINITY && keyboardBeginFrame.origin.x != keyboardEndFrame.origin.x)
+                 || (keyboardBeginFrame.origin.y != INFINITY && keyboardEndFrame.origin.y != INFINITY && keyboardEndFrame.origin.y > keyboardBeginFrame.origin.y))) {
                  
+                 if (self.keyboardView) {
+                     [self jsq_removeKeyboardFrameObserver];
+                 }
                  return;
              }
     
@@ -290,11 +293,6 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
             CGRect newKeyboardFrameSize = [[change objectForKey:NSKeyValueChangeNewKey] CGRectValue];
             
             if (CGRectEqualToRect(newKeyboardFrameSize, oldKeyboardFrameSize)) {
-                return;
-            }
-            
-            CAAnimation *animation = [((CALayer *) self.keyboardView.layer.presentationLayer) animationForKey:@"position"];
-            if (animation && [[animation.timingFunction description] isEqualToString:kCAMediaTimingFunctionLinear] && [self.textView isFirstResponder] && !self.isResigningFirstResponder) {
                 return;
             }
             
