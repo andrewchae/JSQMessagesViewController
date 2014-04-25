@@ -109,8 +109,6 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     
     self.sender = @"Jesse Squires";
     
-    self.inputToolbar.contentView.textView.placeHolder = NSLocalizedString(@"Message", nil);
-    
     [self jsqDemo_setupTestModel];
     
     /**
@@ -156,19 +154,34 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 - (void)receiveMessagePressed:(UIBarButtonItem *)sender
 {
-    JSQMessage *copyMessage = [[self.messages lastObject] copy];
+    /**
+     *  The following is simply to simulate received messages for the demo.
+     *  Do not actually do this.
+     */
+    self.showTypingIndicator = !self.showTypingIndicator;
     
-    if (!copyMessage) {
-        return;
-    }
-    
-    NSMutableArray *copyAvatars = [[self.avatars allKeys] mutableCopy];
-    [copyAvatars removeObject:self.sender];
-    copyMessage.sender = [copyAvatars objectAtIndex:arc4random_uniform((int)[copyAvatars count])];
-    
-    [JSQSystemSoundPlayer jsq_playMessageReceivedSound];
-    [self.messages addObject:copyMessage];
-    [self finishSending];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        JSQMessage *copyMessage = [[self.messages lastObject] copy];
+        
+        if (!copyMessage) {
+            return;
+        }
+        
+        NSMutableArray *copyAvatars = [[self.avatars allKeys] mutableCopy];
+        [copyAvatars removeObject:self.sender];
+        copyMessage.sender = [copyAvatars objectAtIndex:arc4random_uniform((int)[copyAvatars count])];
+        
+        /**
+         *  This you should do upon receiving a message:
+         *
+         *  1. Play sound (optional)
+         *  2. Add new id<JSQMessageData> object to your data source
+         *  3. Call `finishReceivingMessage`
+         */
+        [JSQSystemSoundPlayer jsq_playMessageReceivedSound];
+        [self.messages addObject:copyMessage];
+        [self finishReceivingMessage];
+    });
 }
 
 - (void)closePressed:(UIBarButtonItem *)sender
@@ -183,14 +196,24 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 - (void)didPressSendButton:(UIButton *)sender withMessage:(JSQMessage *)message
 {
+    /**
+     *  Sending a message. Your implementation of this method should do *at least* the following:
+     *
+     *  1. Play sound (optional)
+     *  2. Add new id<JSQMessageData> object to your data source
+     *  3. Call `finishSendingMessage`
+     */
     [JSQSystemSoundPlayer jsq_playMessageSentSound];
     [self.messages addObject:message];
-    [self finishSending];
+    [self finishSendingMessage];
 }
 
 - (void)didPressAccessoryButton:(UIButton *)sender
 {
     NSLog(@"Camera pressed!");
+    /**
+     *  Accessory button has no default functionality, yet.
+     */
 }
 
 
@@ -202,7 +225,7 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     return [self.messages objectAtIndex:indexPath.row];
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender  bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     /**
      *  Reuse created bubble images, but create new imageView to add to each cell
@@ -217,7 +240,7 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
                              highlightedImage:self.incomingBubbleImageView.highlightedImage];
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender  avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     /**
      *  Reuse created avatar images, but create new imageView to add to each cell
@@ -229,6 +252,12 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 - (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  This logic should be consistent with what you return from `heightForCellTopLabelAtIndexPath:`
+     *  The other label text delegate methods should follow similarly.
+     *
+     *  Show a timestamp for every 3rd message
+     */
     if (indexPath.item % 3 == 0) {
         JSQMessage *message = [self.messages objectAtIndex:indexPath.item];
         return [[JSQMessagesTimestampFormatter sharedFormatter] attributedTimestampForDate:message.date];
@@ -239,6 +268,23 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 - (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  iOS7-style sender name labels
+     */
+    if ([sender isEqualToString:self.sender]) {
+        return nil;
+    }
+    
+    if (indexPath.item - 1 > 0) {
+        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.row - 1];
+        if ([[previousMessage sender] isEqualToString:sender]) {
+            return nil;
+        }
+    }
+    
+    /**
+     *  Don't specify attributes to use the defaults.
+     */
     return [[NSAttributedString alloc] initWithString:sender];
 }
 
@@ -270,6 +316,12 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 - (CGFloat)collectionView:(JSQMessagesCollectionView *)collectionView
                    layout:(JSQMessagesCollectionViewFlowLayout *)collectionViewLayout heightForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  This logic should be consistent with what you return from `attributedTextForCellTopLabelAtIndexPath:`
+     *  The other label height delegate methods should follow similarly.
+     *
+     *  Show a timestamp for every 3rd message
+     */
     if (indexPath.item % 3 == 0) {
         return kJSQMessagesCollectionViewCellLabelHeightDefault;
     }
@@ -280,6 +332,21 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 - (CGFloat)collectionView:(JSQMessagesCollectionView *)collectionView
                    layout:(JSQMessagesCollectionViewFlowLayout *)collectionViewLayout heightForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  iOS7-style sender name labels
+     */
+    JSQMessage *currentMessage = [self.messages objectAtIndex:indexPath.row];
+    if ([[currentMessage sender] isEqualToString:self.sender]) {
+        return 0.0f;
+    }
+    
+    if (indexPath.item - 1 > 0) {
+        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.row - 1];
+        if ([[previousMessage sender] isEqualToString:[currentMessage sender]]) {
+            return 0.0f;
+        }
+    }
+    
     return kJSQMessagesCollectionViewCellLabelHeightDefault;
 }
 

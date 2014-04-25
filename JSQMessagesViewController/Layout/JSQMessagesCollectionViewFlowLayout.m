@@ -85,7 +85,7 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
     self.outgoingAvatarViewSize = defaultAvatarSize;
     
     _springinessEnabled = NO;
-    _springResistanceFactor = 900;
+    _springResistanceFactor = 1000;
     
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(jsq_didReceiveApplicationMemoryWarningNotification:)
@@ -101,7 +101,9 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 - (void)dealloc
 {
     _messageBubbleFont = nil;
+    
     _messageBubbleSizes = nil;
+    
     _dynamicAnimator = nil;
     _visibleIndexPaths = nil;
 }
@@ -122,6 +124,7 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 
 - (void)setMessageBubbleFont:(UIFont *)messageBubbleFont
 {
+    NSAssert(messageBubbleFont, @"ERROR: messageBubbleFont must not be nil: %s", __PRETTY_FUNCTION__);
     _messageBubbleFont = messageBubbleFont;
     [self invalidateLayout];
 }
@@ -181,6 +184,12 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 }
 
 #pragma mark - Collection view flow layout
+
+- (void)invalidateLayout
+{
+    [super invalidateLayout];
+    [self.messageBubbleSizes removeAllObjects];
+}
 
 - (void)prepareLayout
 {
