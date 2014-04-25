@@ -205,7 +205,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 {
     [super viewDidAppear:animated];
     [self jsq_addObservers];
-    [self jsq_addActionToInteractivePopGestureRecognizer:YES];
+//    [self jsq_addActionToInteractivePopGestureRecognizer:YES];
     [self.keyboardController beginListeningForKeyboard];
     
     self.collectionView.collectionViewLayout.springinessEnabled = YES;
@@ -215,7 +215,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 {
     [super viewDidDisappear:animated];
     [self jsq_removeObservers];
-    [self jsq_addActionToInteractivePopGestureRecognizer:NO];
+//    [self jsq_addActionToInteractivePopGestureRecognizer:NO];
     [self.keyboardController endListeningForKeyboard];
     
     self.isPushSegue = NO;
