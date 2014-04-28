@@ -19,15 +19,22 @@
 #import "JSQMessagesCollectionViewCellOutgoing.h"
 
 #import "JSQMessagesTypingIndicatorFooterView.h"
+#import "JSQMessagesLoadEarlierHeaderView.h"
+
+
+@interface JSQMessagesCollectionView () <JSQMessagesLoadEarlierHeaderViewDelegate>
+
+- (void)jsq_configureCollectionView;
+
+@end
 
 
 @implementation JSQMessagesCollectionView
 
 #pragma mark - Initialization
 
-- (void)awakeFromNib
+- (void)jsq_configureCollectionView
 {
-    [super awakeFromNib];
     [self setTranslatesAutoresizingMaskIntoConstraints:NO];
     
     self.backgroundColor = [UIColor whiteColor];
@@ -43,6 +50,25 @@
     [self registerNib:[JSQMessagesTypingIndicatorFooterView nib]
           forSupplementaryViewOfKind:UICollectionElementKindSectionFooter
           withReuseIdentifier:[JSQMessagesTypingIndicatorFooterView footerReuseIdentifier]];
+    
+    [self registerNib:[JSQMessagesLoadEarlierHeaderView nib]
+          forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+          withReuseIdentifier:[JSQMessagesLoadEarlierHeaderView headerReuseIdentifier]];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame collectionViewLayout:(UICollectionViewLayout *)layout
+{
+    self = [super initWithFrame:frame collectionViewLayout:layout];
+    if (self) {
+        [self jsq_configureCollectionView];
+    }
+    return self;
+}
+
+- (void)awakeFromNib
+{
+    [super awakeFromNib];
+    [self jsq_configureCollectionView];
 }
 
 #pragma mark - Typing indicator
@@ -62,6 +88,26 @@
                       collectionView:self];
     
     return footerView;
+}
+
+#pragma mark - Load earlier messages header
+
+- (JSQMessagesLoadEarlierHeaderView *)dequeueLoadEarlierMessagesViewHeaderForIndexPath:(NSIndexPath *)indexPath
+{
+    JSQMessagesLoadEarlierHeaderView *headerView = [super dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+                                                                             withReuseIdentifier:[JSQMessagesLoadEarlierHeaderView headerReuseIdentifier]
+                                                                                    forIndexPath:indexPath];
+    headerView.delegate = self;
+    return headerView;
+}
+
+#pragma mark - Load earlier messages header delegate
+
+- (void)headerView:(JSQMessagesLoadEarlierHeaderView *)headerView didPressLoadButton:(UIButton *)sender
+{
+    if ([self.delegate respondsToSelector:@selector(collectionView:header:didTapLoadEarlierMessagesButton:)]) {
+        [self.delegate collectionView:self header:headerView didTapLoadEarlierMessagesButton:sender];
+    }
 }
 
 @end

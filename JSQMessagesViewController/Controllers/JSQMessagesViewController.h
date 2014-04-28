@@ -44,7 +44,7 @@
 
 /**
  *  The name of the user sending messages. This value must not be `nil`. 
- *  The default value is `@"JSQDefaultSender"`.
+ *  The default value is `JSQDefaultSender`.
  */
 @property (copy, nonatomic) NSString *sender;
 
@@ -63,7 +63,7 @@
  *  @discussion The default value is the string returned by `[JSQMessagesCollectionViewCellOutgoing cellReuseIdentifier]`. 
  *  This value must not be `nil`.
  *  
- *  @see JSQMessagesCollectionViewCellOutgoing.
+ *  @see `JSQMessagesCollectionViewCellOutgoing`.
  *
  *  @warning Overriding this property's default value is *not* recommended. 
  *  You should only override this property's default value if you are proividing your own cell prototypes.
@@ -79,7 +79,7 @@
  *  @discussion The default value is the string returned by `[JSQMessagesCollectionViewCellIncoming cellReuseIdentifier]`. 
  *  This value must not be `nil`.
  *
- *  @see JSQMessagesCollectionViewCellIncoming.
+ *  @see `JSQMessagesCollectionViewCellIncoming`.
  *
  *  @warning Overriding this property's default value is *not* recommended. 
  *  You should only override this property's default value if you are proividing your own cell prototypes. 
@@ -94,7 +94,7 @@
  *
  *  @discussion The color specified is used for the typing indicator bubble image color.
  *  This color is then slightly darkened and used to color the typing indicator ellipsis.
- *  The default value is the light gray color value return by `jsq_messageBubbleLightGrayColor`.
+ *  The default value is the light gray color value return by `[UIColor jsq_messageBubbleLightGrayColor]`.
  */
 @property (strong, nonatomic) UIColor *typingIndicatorColor;
 
@@ -104,6 +104,13 @@
  *  Setting this property to `NO` will animate hiding the typing indicator immediately.
  */
 @property (assign, nonatomic) BOOL showTypingIndicator;
+
+/**
+ *  Specifies whether or not the view controller should show the "load earlier messages" header view.
+ *  @discussion Setting this property to `YES` will show the header view immediately.
+ *  Settings this property to `NO` will hide the header view immediately.
+ */
+@property (assign, nonatomic) BOOL showLoadEarlierMessagesHeader;
 
 #pragma mark - Class methods
 
@@ -117,6 +124,8 @@
 
 /**
  *  Creates and returns a new `JSQMessagesViewController` object.
+ *  
+ *  @discussion This is the designated initializer for programmatic instantiation.
  *
  *  @return The initialized messages view controller if successful, otherwise `nil`.
  */

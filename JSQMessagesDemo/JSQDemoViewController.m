@@ -112,6 +112,11 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     [self jsqDemo_setupTestModel];
     
     /**
+     *  Remove camera button since media messages are not yet implemented
+     */
+    // self.inputToolbar.contentView.leftBarButtonItem = nil;
+    
+    /**
      *  Create bubble images once and save
      */
     self.outgoingBubbleImageView = [JSQMessagesBubbleImageFactory
@@ -160,7 +165,7 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
      */
     self.showTypingIndicator = !self.showTypingIndicator;
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         JSQMessage *copyMessage = [[self.messages lastObject] copy];
         
         if (!copyMessage) {
@@ -355,6 +360,12 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 {
     
     return 0.0f;
+}
+
+- (void)collectionView:(JSQMessagesCollectionView *)collectionView
+                header:(JSQMessagesLoadEarlierHeaderView *)headerView didTapLoadEarlierMessagesButton:(UIButton *)sender
+{
+    NSLog(@"Load earlier messages!");
 }
 
 @end

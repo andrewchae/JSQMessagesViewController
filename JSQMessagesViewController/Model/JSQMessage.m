@@ -47,7 +47,34 @@
     _date = nil;
 }
 
+#pragma mark - JSQMessage
+
+- (BOOL)isEqualToMessage:(JSQMessage *)aMessage
+{
+    return [self.text isEqualToString:aMessage.text]
+            && [self.sender isEqualToString:aMessage.sender]
+            && ([self.date compare:aMessage.date] == NSOrderedSame);
+}
+
 #pragma mark - NSObject
+
+- (BOOL)isEqual:(id)object
+{
+    if (self == object) {
+        return YES;
+    }
+    
+    if (![object isKindOfClass:[self class]]) {
+        return NO;
+    }
+    
+    return [self isEqualToMessage:(JSQMessage *)object];
+}
+
+- (NSUInteger)hash
+{
+    return [self.text hash] ^ [self.sender hash] ^ [self.date hash];
+}
 
 - (NSString *)description
 {
@@ -60,18 +87,18 @@
 {
     self = [super init];
     if (self) {
-        _text = [aDecoder decodeObjectForKey:@"text"];
-        _sender = [aDecoder decodeObjectForKey:@"sender"];
-        _date = [aDecoder decodeObjectForKey:@"date"];
+        _text = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(text))];
+        _sender = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(sender))];
+        _date = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(date))];
     }
     return self;
 }
 
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
-    [aCoder encodeObject:self.text forKey:@"text"];
-    [aCoder encodeObject:self.sender forKey:@"sender"];
-    [aCoder encodeObject:self.date forKey:@"date"];
+    [aCoder encodeObject:self.text forKey:NSStringFromSelector(@selector(text))];
+    [aCoder encodeObject:self.sender forKey:NSStringFromSelector(@selector(sender))];
+    [aCoder encodeObject:self.date forKey:NSStringFromSelector(@selector(date))];
 }
 
 #pragma mark - NSCopying

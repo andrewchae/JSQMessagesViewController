@@ -34,7 +34,7 @@
 /**
  *  Tells the delegate that the keyboard frame has changed.
  *
- *  @param keyboardFrame The new (current) frame of the keyboard.
+ *  @param keyboardFrame The new frame of the keyboard in its own window's coordinate system.
  */
 - (void)keyboardDidChangeFrame:(CGRect)keyboardFrame;
 
@@ -69,8 +69,10 @@
 @property (weak, nonatomic, readonly) UIPanGestureRecognizer *panGestureRecognizer;
 
 /**
- *  Specifies the point in the `contextView` at which the `panGestureRecognizer` 
+ *  Specifies the distance from the keyboard at which the `panGestureRecognizer`
  *  should trigger user interaction with the keyboard by panning.
+ *
+ *  @discussion The x value of the point is not used.
  */
 @property (assign, nonatomic) CGPoint keyboardTriggerPoint;
 

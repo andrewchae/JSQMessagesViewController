@@ -21,7 +21,9 @@
 
 #import "JSQMessagesCollectionViewCellIncoming.h"
 #import "JSQMessagesCollectionViewCellOutgoing.h"
+
 #import "JSQMessagesTypingIndicatorFooterView.h"
+#import "JSQMessagesLoadEarlierHeaderView.h"
 
 #import "JSQMessagesToolbarContentView.h"
 #import "JSQMessagesInputToolbar.h"
@@ -39,7 +41,8 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 @interface JSQMessagesViewController () <JSQMessagesInputToolbarDelegate,
                                          JSQMessagesCollectionViewCellDelegate,
-                                         JSQMessagesKeyboardControllerDelegate, UITextViewDelegate>
+                                         JSQMessagesKeyboardControllerDelegate,
+                                         UITextViewDelegate>
 
 @property (weak, nonatomic) IBOutlet JSQMessagesCollectionView *collectionView;
 @property (weak, nonatomic) IBOutlet JSQMessagesInputToolbar *inputToolbar;
@@ -52,7 +55,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 @property (assign, nonatomic) CGFloat statusBarChangeInHeight;
 @property (assign, nonatomic) BOOL isPushSegue;
 
-- (void)jsq_prepareMessagesViewController;
+- (void)jsq_configureMessagesViewController;
 
 - (void)jsq_prepareForRotation;
 
@@ -102,7 +105,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 #pragma mark - Initialization
 
-- (void)jsq_prepareMessagesViewController
+- (void)jsq_configureMessagesViewController
 {
     self.view.backgroundColor = [UIColor whiteColor];
     
@@ -125,10 +128,12 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     self.typingIndicatorColor = [UIColor jsq_messageBubbleLightGrayColor];
     self.showTypingIndicator = NO;
     
+    self.showLoadEarlierMessagesHeader = NO;
+    
     [self jsq_updateCollectionViewInsets];
     
     self.keyboardController = [[JSQMessagesKeyboardController alloc] initWithTextView:self.inputToolbar.contentView.textView
-                                                                          contextView:self.collectionView
+                                                                          contextView:self.view
                                                                  panGestureRecognizer:self.collectionView.panGestureRecognizer
                                                                              delegate:self];
 }
@@ -149,6 +154,8 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     [self jsq_registerForNotifications:NO];
     [self jsq_removeObservers];
     
+    _collectionView.dataSource = nil;
+    _collectionView.delegate = nil;
     _collectionView = nil;
     _inputToolbar = nil;
     
@@ -159,6 +166,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     _outgoingCellIdentifier = nil;
     _incomingCellIdentifier = nil;
     
+    [_keyboardController endListeningForKeyboard];
     _keyboardController = nil;
 }
 
@@ -176,12 +184,23 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     [self scrollToBottomAnimated:YES];
 }
 
+- (void)setShowLoadEarlierMessagesHeader:(BOOL)showLoadEarlierMessagesHeader
+{
+    if (_showLoadEarlierMessagesHeader == showLoadEarlierMessagesHeader) {
+        return;
+    }
+    
+    _showLoadEarlierMessagesHeader = showLoadEarlierMessagesHeader;
+    
+    [self.collectionView.collectionViewLayout invalidateLayout];
+}
+
 #pragma mark - View lifecycle
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    [self jsq_prepareMessagesViewController];
+    [self jsq_configureMessagesViewController];
     [self jsq_registerForNotifications:YES];
 }
 
@@ -450,7 +469,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
                                                            forIndexPath:indexPath];
     }
     else if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
-        // TODO: load previous messages header
+        return [collectionView dequeueLoadEarlierMessagesViewHeaderForIndexPath:indexPath];
     }
     
     return nil;
@@ -464,6 +483,16 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     }
     
     return CGSizeMake([collectionViewLayout itemWidth], kJSQMessagesTypingIndicatorFooterViewHeight);
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                  layout:(JSQMessagesCollectionViewFlowLayout *)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section
+{
+    if (!self.showLoadEarlierMessagesHeader) {
+        return CGSizeZero;
+    }
+    
+    return CGSizeMake([collectionViewLayout itemWidth], kJSQMessagesLoadEarlierHeaderViewHeight);
 }
 
 #pragma mark - Collection view delegate
@@ -613,7 +642,9 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 - (void)keyboardDidChangeFrame:(CGRect)keyboardFrame
 {
-    CGFloat heightFromBottom = self.view.frame.origin.y + CGRectGetHeight(self.collectionView.frame) - CGRectGetMinY(keyboardFrame);
+    CGRect keyboardFrameConverted = [self.view convertRect:keyboardFrame fromView:nil];
+    
+    CGFloat heightFromBottom = CGRectGetHeight(self.collectionView.frame) - CGRectGetMinY(keyboardFrameConverted);
     
     heightFromBottom = MAX(0.0f, heightFromBottom + self.statusBarChangeInHeight);
     

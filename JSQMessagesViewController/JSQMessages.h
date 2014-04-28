@@ -4,10 +4,14 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  MIT License
 //  Copyright (c) 2014 Jesse Squires
 //  http://opensource.org/licenses/MIT
 //
@@ -20,6 +24,8 @@
 #import "JSQMessagesCollectionView.h"
 #import "JSQMessagesCollectionViewCellIncoming.h"
 #import "JSQMessagesCollectionViewCellOutgoing.h"
+#import "JSQMessagesTypingIndicatorFooterView.h"
+#import "JSQMessagesLoadEarlierHeaderView.h"
 
 #import "JSQMessagesCollectionViewFlowLayout.h"
 #import "JSQMessagesCollectionViewLayoutAttributes.h"
