@@ -57,8 +57,6 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 - (void)jsq_configureMessagesViewController;
 
-- (void)jsq_prepareForRotation;
-
 - (void)jsq_finishSendingOrReceivingMessage;
 
 - (JSQMessage *)jsq_currentlyComposedMessage;
@@ -282,35 +280,6 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     return UIInterfaceOrientationMaskAll;
 }
 
-- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-    [super willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
-    [self jsq_prepareForRotation];
-}
-
-- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-    [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
-    [self jsq_prepareForRotation];
-}
-
-- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
-{
-    [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
-    [self jsq_prepareForRotation];
-    
-    // TODO: deal with keyboard on rotation
-}
-
-- (void)jsq_prepareForRotation
-{
-    // TODO: deal with keyboard on rotation
-    
-    [self.inputToolbar.contentView.textView resignFirstResponder];
-    [self.collectionView.collectionViewLayout invalidateLayout];
-    [self.collectionView reloadData];
-}
-
 #pragma mark - Messages view controller
 
 - (void)didPressSendButton:(UIButton *)sender withMessage:(JSQMessage *)message { }
@@ -468,7 +437,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
                                                             bubbleColor:self.typingIndicatorColor
                                                            forIndexPath:indexPath];
     }
-    else if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
+    else if (self.showLoadEarlierMessagesHeader && [kind isEqualToString:UICollectionElementKindSectionHeader]) {
         return [collectionView dequeueLoadEarlierMessagesViewHeaderForIndexPath:indexPath];
     }
     
@@ -642,9 +611,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 - (void)keyboardDidChangeFrame:(CGRect)keyboardFrame
 {
-    CGRect keyboardFrameConverted = [self.view convertRect:keyboardFrame fromView:nil];
-    
-    CGFloat heightFromBottom = CGRectGetHeight(self.collectionView.frame) - CGRectGetMinY(keyboardFrameConverted);
+    CGFloat heightFromBottom = CGRectGetHeight(self.collectionView.frame) - CGRectGetMinY(keyboardFrame);
     
     heightFromBottom = MAX(0.0f, heightFromBottom + self.statusBarChangeInHeight);
     
