@@ -157,6 +157,24 @@
     self.messageBubbleTopLabel.text = nil;
     self.cellBottomLabel.text = nil;
     
+    unsigned long length;
+    NSRange effectiveRange;
+    id attributeValue;
+    
+    length = [self.textView.attributedText length];
+    effectiveRange = NSMakeRange(0, 0);
+    
+    while (NSMaxRange(effectiveRange) < length) {
+        attributeValue = [self.textView.attributedText attribute:NSLinkAttributeName
+                                                         atIndex:NSMaxRange(effectiveRange) effectiveRange:&effectiveRange];
+        
+        if (attributeValue) {
+            NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:self.textView.attributedText];
+            [attributedText removeAttribute:NSLinkAttributeName range:effectiveRange];
+            self.textView.attributedText = attributedText;
+        }
+    }
+    
     self.textView.text = nil;
 }
 
