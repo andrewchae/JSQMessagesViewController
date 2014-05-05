@@ -268,13 +268,13 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     
     double animationDuration = [userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
     
-    CGRect keyboardEndFrameConverted = [self.contextView convertRect:keyboardEndFrame fromView:nil];
+//    CGRect keyboardEndFrameConverted = [self.contextView convertRect:keyboardEndFrame fromView:nil];
     
     [UIView animateWithDuration:animationDuration
                           delay:0.0
                         options:animationCurveOption
                      animations:^{
-                         [self.delegate keyboardDidChangeFrame:keyboardEndFrameConverted];
+                         [self.delegate keyboardDidChangeFrame:keyboardEndFrame];
                      }
                      completion:^(BOOL finished) {
                          if (completion) {
