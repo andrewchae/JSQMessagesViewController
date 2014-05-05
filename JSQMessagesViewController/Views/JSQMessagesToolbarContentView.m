@@ -4,12 +4,16 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  License
 //  Copyright (c) 2014 Jesse Squires
-//  http://opensource.org/licenses/MIT
+//  Released under an MIT license: http://opensource.org/licenses/MIT
 //
 
 #import "JSQMessagesToolbarContentView.h"
@@ -60,6 +64,9 @@ const CGFloat kJSQMessagesToolbarContentViewHorizontalSpacingDefault = 4.0f;
     
     self.leftHorizontalSpacingConstraint.constant = kJSQMessagesToolbarContentViewHorizontalSpacingDefault;
     self.rightHorizontalSpacingConstraint.constant = kJSQMessagesToolbarContentViewHorizontalSpacingDefault;
+    
+    self.leftBarButtonItem = nil;
+    self.rightBarButtonItem = nil;
     
     self.backgroundColor = [UIColor clearColor];
 }

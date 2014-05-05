@@ -4,12 +4,16 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  License
 //  Copyright (c) 2014 Jesse Squires
-//  http://opensource.org/licenses/MIT
+//  Released under an MIT license: http://opensource.org/licenses/MIT
 //
 
 #import "JSQMessagesViewController.h"
@@ -59,7 +63,7 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 
 - (void)jsq_finishSendingOrReceivingMessage;
 
-- (JSQMessage *)jsq_currentlyComposedMessage;
+- (NSString *)jsq_currentlyComposedMessageText;
 
 - (void)jsq_updateKeyboardTriggerPoint;
 - (void)jsq_setToolbarBottomLayoutGuideConstant:(CGFloat)constant;
@@ -136,17 +140,6 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
                                                                              delegate:self];
 }
 
-- (instancetype)initWithCoder:(NSCoder *)aDecoder
-{
-    self = [super initWithCoder:aDecoder];
-    if (self) {
-        [[NSBundle mainBundle] loadNibNamed:NSStringFromClass([JSQMessagesViewController class])
-                                      owner:self
-                                    options:nil];
-    }
-    return self;
-}
-
 - (void)dealloc
 {
     [self jsq_registerForNotifications:NO];
@@ -198,6 +191,9 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    [[NSBundle mainBundle] loadNibNamed:NSStringFromClass([JSQMessagesViewController class])
+                                  owner:self
+                                options:nil];
     [self jsq_configureMessagesViewController];
     [self jsq_registerForNotifications:YES];
 }
@@ -228,11 +224,16 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     self.collectionView.collectionViewLayout.springinessEnabled = YES;
 }
 
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+//    [self jsq_addActionToInteractivePopGestureRecognizer:NO];
+}
+
 - (void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];
     [self jsq_removeObservers];
-//    [self jsq_addActionToInteractivePopGestureRecognizer:NO];
     [self.keyboardController endListeningForKeyboard];
     
     self.isPushSegue = NO;
@@ -280,9 +281,18 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     return UIInterfaceOrientationMaskAll;
 }
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    [super willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
+    [self.collectionView.collectionViewLayout invalidateLayout];
+}
+
 #pragma mark - Messages view controller
 
-- (void)didPressSendButton:(UIButton *)sender withMessage:(JSQMessage *)message { }
+- (void)didPressSendButton:(UIButton *)button
+           withMessageText:(NSString *)text
+                    sender:(NSString *)sender
+                      date:(NSDate *)date { }
 
 - (void)didPressAccessoryButton:(UIButton *)sender { }
 
@@ -337,29 +347,29 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     return nil;
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSAssert(NO, @"ERROR: required method not implemented: %s", __PRETTY_FUNCTION__);
     return nil;
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSAssert(NO, @"ERROR: required method not implemented: %s", __PRETTY_FUNCTION__);
     return nil;
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     return nil;
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     return nil;
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForCellBottomLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForCellBottomLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     return nil;
 }
@@ -394,21 +404,11 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
     NSAssert(messageText, @"ERROR: messageData text must not be nil: %s", __PRETTY_FUNCTION__);
     
     cell.textView.text = messageText;
-    
-    cell.messageBubbleImageView = [collectionView.dataSource collectionView:collectionView
-                                                                     sender:messageSender bubbleImageViewForItemAtIndexPath:indexPath];
-    
-    cell.avatarImageView = [collectionView.dataSource collectionView:collectionView
-                                                              sender:messageSender avatarImageViewForItemAtIndexPath:indexPath];
-    
-    cell.cellTopLabel.attributedText = [collectionView.dataSource collectionView:collectionView
-                                                                          sender:messageSender attributedTextForCellTopLabelAtIndexPath:indexPath];
-    
-    cell.messageBubbleTopLabel.attributedText = [collectionView.dataSource collectionView:collectionView
-                                                                                   sender:messageSender attributedTextForMessageBubbleTopLabelAtIndexPath:indexPath];
-    
-    cell.cellBottomLabel.attributedText = [collectionView.dataSource collectionView:collectionView
-                                                                             sender:messageSender attributedTextForCellBottomLabelAtIndexPath:indexPath];
+    cell.messageBubbleImageView = [collectionView.dataSource collectionView:collectionView bubbleImageViewForItemAtIndexPath:indexPath];
+    cell.avatarImageView = [collectionView.dataSource collectionView:collectionView avatarImageViewForItemAtIndexPath:indexPath];
+    cell.cellTopLabel.attributedText = [collectionView.dataSource collectionView:collectionView attributedTextForCellTopLabelAtIndexPath:indexPath];
+    cell.messageBubbleTopLabel.attributedText = [collectionView.dataSource collectionView:collectionView attributedTextForMessageBubbleTopLabelAtIndexPath:indexPath];
+    cell.cellBottomLabel.attributedText = [collectionView.dataSource collectionView:collectionView attributedTextForCellBottomLabelAtIndexPath:indexPath];
     
     cell.backgroundColor = [UIColor clearColor];
     
@@ -418,7 +418,6 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
         cell.messageBubbleTopLabel.textInsets = UIEdgeInsetsMake(0.0f, 0.0f, 0.0f, bubbleTopLabelInset);
     }
     else {
-        cell.textView.textColor = [UIColor blackColor];
         cell.messageBubbleTopLabel.textInsets = UIEdgeInsetsMake(0.0f, bubbleTopLabelInset, 0.0f, 0.0f);
     }
     
@@ -525,28 +524,32 @@ static void * kJSQMessagesKeyValueObservingContext = &kJSQMessagesKeyValueObserv
         [self didPressAccessoryButton:sender];
     }
     else {
-        [self didPressSendButton:sender withMessage:[self jsq_currentlyComposedMessage]];
+        [self didPressSendButton:sender
+                 withMessageText:[self jsq_currentlyComposedMessageText]
+                          sender:self.sender
+                            date:[NSDate date]];
     }
 }
 
 - (void)messagesInputToolbar:(JSQMessagesInputToolbar *)toolbar didPressRightBarButton:(UIButton *)sender
 {
     if (toolbar.sendButtonOnRight) {
-        [self didPressSendButton:sender withMessage:[self jsq_currentlyComposedMessage]];
+        [self didPressSendButton:sender
+                 withMessageText:[self jsq_currentlyComposedMessageText]
+                          sender:self.sender
+                            date:[NSDate date]];
     }
     else {
         [self didPressAccessoryButton:sender];
     }
 }
 
-- (JSQMessage *)jsq_currentlyComposedMessage
+- (NSString *)jsq_currentlyComposedMessageText
 {
     //  add a space to accept any auto-correct suggestions
     NSString *text = self.inputToolbar.contentView.textView.text;
     self.inputToolbar.contentView.textView.text = [text stringByAppendingString:@" "];
-    
-    return [JSQMessage messageWithText:[self.inputToolbar.contentView.textView.text jsq_stringByTrimingWhitespace]
-                                sender:self.sender];
+    return [self.inputToolbar.contentView.textView.text jsq_stringByTrimingWhitespace];
 }
 
 #pragma mark - Text view delegate

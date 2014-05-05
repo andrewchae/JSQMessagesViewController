@@ -4,40 +4,36 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  License
 //  Copyright (c) 2014 Jesse Squires
-//  http://opensource.org/licenses/MIT
+//  Released under an MIT license: http://opensource.org/licenses/MIT
 //
 
 #import "JSQDemoViewController.h"
+
 
 static NSString * const kJSQDemoAvatarNameCook = @"Tim Cook";
 static NSString * const kJSQDemoAvatarNameJobs = @"Jobs";
 static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 
-@interface JSQDemoViewController ()
-
-@property (strong, nonatomic) UIImageView *outgoingBubbleImageView;
-@property (strong, nonatomic) UIImageView *incomingBubbleImageView;
-
-- (void)jsqDemo_setupTestModel;
-
-@end
-
-
-
 @implementation JSQDemoViewController
 
 #pragma mark - Demo setup
 
-- (void)jsqDemo_setupTestModel
+- (void)setupTestModel
 {
     /**
-     *  Load some fake messages
+     *  Load some fake messages for demo.
+     *
+     *  You should have a mutable array or orderedSet, or something.
      */
     self.messages = [[NSMutableArray alloc] initWithObjects:
                      [[JSQMessage alloc] initWithText:@"Welcome to JSQMessages: A messaging UI framework for iOS." sender:self.sender date:[NSDate distantPast]],
@@ -49,7 +45,11 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
                      nil];
     
     /**
-     *  Create avatar images once and save
+     *  Create avatar images once.
+     *
+     *  Be sure to create your avatars one time and reuse them for good performance.
+     *
+     *  If you are not using avatars, ignore this.
      */
     CGFloat outgoingDiameter = self.collectionView.collectionViewLayout.outgoingAvatarViewSize.width;
     
@@ -99,7 +99,13 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 #pragma mark - View lifecycle
 
 /**
- *  Override point for customization
+ *  Override point for customization.
+ *
+ *  Customize your view.
+ *  Look at the properties on `JSQMessagesViewController` to see what is possible.
+ *
+ *  Customize your layout.
+ *  Look at the properties on `JSQMessagesCollectionViewFlowLayout` to see what is possible.
  */
 - (void)viewDidLoad
 {
@@ -109,23 +115,29 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     
     self.sender = @"Jesse Squires";
     
-    [self jsqDemo_setupTestModel];
+    [self setupTestModel];
     
     /**
      *  Remove camera button since media messages are not yet implemented
+     *
+     *   self.inputToolbar.contentView.leftBarButtonItem = nil;
+     *
+     *  Or, you can set a custom `leftBarButtonItem` and a custom `rightBarButtonItem`
      */
-    // self.inputToolbar.contentView.leftBarButtonItem = nil;
     
     /**
-     *  Create bubble images once and save
+     *  Create bubble images.
+     *
+     *  Be sure to create your avatars one time and reuse them for good performance.
+     *
      */
     self.outgoingBubbleImageView = [JSQMessagesBubbleImageFactory
-                                    outgoingMessageBubbleImageViewWithColor:[UIColor jsq_messageBubbleBlueColor]];
+                                    outgoingMessageBubbleImageViewWithColor:[UIColor jsq_messageBubbleLightGrayColor]];
     
     self.incomingBubbleImageView = [JSQMessagesBubbleImageFactory
-                                    incomingMessageBubbleImageViewWithColor:[UIColor jsq_messageBubbleLightGrayColor]];
+                                    incomingMessageBubbleImageViewWithColor:[UIColor jsq_messageBubbleGreenColor]];
     
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Test Msg"
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"typing"]
                                                                               style:UIBarButtonItemStyleBordered
                                                                              target:self
                                                                              action:@selector(receiveMessagePressed:)];
@@ -163,14 +175,20 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
      *  The following is simply to simulate received messages for the demo.
      *  Do not actually do this.
      */
+    
+    
+    /**
+     *  Show the tpying indicator
+     */
     self.showTypingIndicator = !self.showTypingIndicator;
     
+    JSQMessage *copyMessage = [[self.messages lastObject] copy];
+    
+    if (!copyMessage) {
+        return;
+    }
+    
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        JSQMessage *copyMessage = [[self.messages lastObject] copy];
-        
-        if (!copyMessage) {
-            return;
-        }
         
         NSMutableArray *copyAvatars = [[self.avatars allKeys] mutableCopy];
         [copyAvatars removeObject:self.sender];
@@ -199,7 +217,10 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 #pragma mark - JSQMessagesViewController method overrides
 
-- (void)didPressSendButton:(UIButton *)sender withMessage:(JSQMessage *)message
+- (void)didPressSendButton:(UIButton *)button
+           withMessageText:(NSString *)text
+                    sender:(NSString *)sender
+                      date:(NSDate *)date
 {
     /**
      *  Sending a message. Your implementation of this method should do *at least* the following:
@@ -209,7 +230,10 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
      *  3. Call `finishSendingMessage`
      */
     [JSQSystemSoundPlayer jsq_playMessageSentSound];
+    
+    JSQMessage *message = [[JSQMessage alloc] initWithText:text sender:sender date:date];
     [self.messages addObject:message];
+    
     [self finishSendingMessage];
 }
 
@@ -227,16 +251,24 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
 
 - (id<JSQMessageData>)collectionView:(JSQMessagesCollectionView *)collectionView messageDataForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    return [self.messages objectAtIndex:indexPath.row];
+    return [self.messages objectAtIndex:indexPath.item];
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView bubbleImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  You may return nil here if you do not want bubbles.
+     *  In this case, you should set the background color of your collection view cell's textView.
+     */
+    
     /**
      *  Reuse created bubble images, but create new imageView to add to each cell
      *  Otherwise, each cell would be referencing the same imageView and bubbles would disappear from cells
      */
-    if ([sender isEqualToString:self.sender]) {
+    
+    JSQMessage *message = [self.messages objectAtIndex:indexPath.item];
+    
+    if ([message.sender isEqualToString:self.sender]) {
         return [[UIImageView alloc] initWithImage:self.outgoingBubbleImageView.image
                                  highlightedImage:self.outgoingBubbleImageView.highlightedImage];
     }
@@ -245,21 +277,40 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
                              highlightedImage:self.incomingBubbleImageView.highlightedImage];
 }
 
-- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
+- (UIImageView *)collectionView:(JSQMessagesCollectionView *)collectionView avatarImageViewForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    /**
+     *  Return `nil` here if you do not want avatars.
+     *  If you do return `nil`, be sure to do the following in `viewDidLoad`:
+     *
+     *  self.collectionView.collectionViewLayout.incomingAvatarViewSize = CGSizeZero;
+     *  self.collectionView.collectionViewLayout.outgoingAvatarViewSize = CGSizeZero;
+     *
+     *  It is possible to have only outgoing avatars or only incoming avatars, too.
+     */
+    
     /**
      *  Reuse created avatar images, but create new imageView to add to each cell
      *  Otherwise, each cell would be referencing the same imageView and avatars would disappear from cells
+     *
+     *  Note: these images will be sized according to these values:
+     *
+     *  self.collectionView.collectionViewLayout.incomingAvatarViewSize
+     *  self.collectionView.collectionViewLayout.outgoingAvatarViewSize
+     *
+     *  Override the defaults in `viewDidLoad`
      */
-    UIImage *avatarImage = [self.avatars objectForKey:sender];
+    JSQMessage *message = [self.messages objectAtIndex:indexPath.item];
+    
+    UIImage *avatarImage = [self.avatars objectForKey:message.sender];
     return [[UIImageView alloc] initWithImage:avatarImage];
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     /**
      *  This logic should be consistent with what you return from `heightForCellTopLabelAtIndexPath:`
-     *  The other label text delegate methods should follow similarly.
+     *  The other label text delegate methods should follow a similar pattern.
      *
      *  Show a timestamp for every 3rd message
      */
@@ -271,18 +322,20 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     return nil;
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForMessageBubbleTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
+    JSQMessage *message = [self.messages objectAtIndex:indexPath.item];
+    
     /**
      *  iOS7-style sender name labels
      */
-    if ([sender isEqualToString:self.sender]) {
+    if ([message.sender isEqualToString:self.sender]) {
         return nil;
     }
     
     if (indexPath.item - 1 > 0) {
-        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.row - 1];
-        if ([[previousMessage sender] isEqualToString:sender]) {
+        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.item - 1];
+        if ([[previousMessage sender] isEqualToString:message.sender]) {
             return nil;
         }
     }
@@ -290,10 +343,10 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     /**
      *  Don't specify attributes to use the defaults.
      */
-    return [[NSAttributedString alloc] initWithString:sender];
+    return [[NSAttributedString alloc] initWithString:message.sender];
 }
 
-- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView sender:(NSString *)sender attributedTextForCellBottomLabelAtIndexPath:(NSIndexPath *)indexPath
+- (NSAttributedString *)collectionView:(JSQMessagesCollectionView *)collectionView attributedTextForCellBottomLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     return nil;
 }
@@ -311,6 +364,33 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
      *  Override point for customizing cells
      */
     JSQMessagesCollectionViewCell *cell = (JSQMessagesCollectionViewCell *)[super collectionView:collectionView cellForItemAtIndexPath:indexPath];
+    
+    /**
+     *  Configure almost *anything* on the cell
+     *  
+     *  Text colors, label text, label colors, etc.
+     *
+     *
+     *  DO NOT set `cell.textView.font` !
+     *  Instead, you need to set `self.collectionView.collectionViewLayout.messageBubbleFont` to the font you want in `viewDidLoad`
+     *
+     *  
+     *  DO NOT manipulate cell layout information!
+     *  Instead, override the properties you want on `self.collectionView.collectionViewLayout` from `viewDidLoad`
+     */
+    
+    JSQMessage *msg = [self.messages objectAtIndex:indexPath.item];
+    
+    if ([msg.sender isEqualToString:self.sender]) {
+        cell.textView.textColor = [UIColor blackColor];
+    }
+    else {
+        cell.textView.textColor = [UIColor whiteColor];
+    }
+    
+    cell.textView.linkTextAttributes = @{ NSForegroundColorAttributeName : cell.textView.textColor,
+                                          NSUnderlineStyleAttributeName : @(NSUnderlineStyleSingle | NSUnderlinePatternSolid) };
+    
     return cell;
 }
 
@@ -322,8 +402,12 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
                    layout:(JSQMessagesCollectionViewFlowLayout *)collectionViewLayout heightForCellTopLabelAtIndexPath:(NSIndexPath *)indexPath
 {
     /**
+     *  Each label in a cell has a `height` delegate method that corresponds to its text dataSource method
+     */
+    
+    /**
      *  This logic should be consistent with what you return from `attributedTextForCellTopLabelAtIndexPath:`
-     *  The other label height delegate methods should follow similarly.
+     *  The other label height delegate methods should follow similarly
      *
      *  Show a timestamp for every 3rd message
      */
@@ -340,13 +424,13 @@ static NSString * const kJSQDemoAvatarNameWoz = @"Steve Wozniak";
     /**
      *  iOS7-style sender name labels
      */
-    JSQMessage *currentMessage = [self.messages objectAtIndex:indexPath.row];
+    JSQMessage *currentMessage = [self.messages objectAtIndex:indexPath.item];
     if ([[currentMessage sender] isEqualToString:self.sender]) {
         return 0.0f;
     }
     
     if (indexPath.item - 1 > 0) {
-        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.row - 1];
+        JSQMessage *previousMessage = [self.messages objectAtIndex:indexPath.item - 1];
         if ([[previousMessage sender] isEqualToString:[currentMessage sender]]) {
             return 0.0f;
         }

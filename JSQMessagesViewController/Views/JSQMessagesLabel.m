@@ -4,25 +4,51 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  License
 //  Copyright (c) 2014 Jesse Squires
-//  http://opensource.org/licenses/MIT
+//  Released under an MIT license: http://opensource.org/licenses/MIT
 //
 
 #import "JSQMessagesLabel.h"
+
+
+@interface JSQMessagesLabel ()
+
+- (void)jsq_configureLabel;
+
+@end
+
 
 @implementation JSQMessagesLabel
 
 #pragma mark - Initialization
 
+- (void)jsq_configureLabel
+{
+    [self setTranslatesAutoresizingMaskIntoConstraints:NO];
+    self.textInsets = UIEdgeInsetsZero;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self jsq_configureLabel];
+    }
+    return self;
+}
+
 - (void)awakeFromNib
 {
     [super awakeFromNib];
-    [self setTranslatesAutoresizingMaskIntoConstraints:NO];
-    self.textInsets = UIEdgeInsetsZero;
+    [self jsq_configureLabel];
 }
 
 #pragma mark - Setters

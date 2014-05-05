@@ -4,12 +4,16 @@
 //
 //
 //  Documentation
-//  http://cocoadocs.org/docsets/JSMessagesViewController
+//  http://cocoadocs.org/docsets/JSQMessagesViewController
 //
 //
-//  The MIT License
+//  GitHub
+//  https://github.com/jessesquires/JSQMessagesViewController
+//
+//
+//  License
 //  Copyright (c) 2014 Jesse Squires
-//  http://opensource.org/licenses/MIT
+//  Released under an MIT license: http://opensource.org/licenses/MIT
 //
 
 #import "JSQMessagesCollectionViewCell.h"
@@ -156,6 +160,10 @@
     self.cellTopLabel.text = nil;
     self.messageBubbleTopLabel.text = nil;
     self.cellBottomLabel.text = nil;
+    
+    self.cellTopLabelHeightContraint.constant = 0.0f;
+    self.messageBubbleTopLabelHeightContraint.constant = 0.0f;
+    self.cellBottomLabelHeightContraint.constant = 0.0f;
     
     unsigned long length;
     NSRange effectiveRange;
