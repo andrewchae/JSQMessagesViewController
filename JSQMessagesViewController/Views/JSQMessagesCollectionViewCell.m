@@ -161,10 +161,6 @@
     self.messageBubbleTopLabel.text = nil;
     self.cellBottomLabel.text = nil;
     
-    self.cellTopLabelHeightContraint.constant = 0.0f;
-    self.messageBubbleTopLabelHeightContraint.constant = 0.0f;
-    self.cellBottomLabelHeightContraint.constant = 0.0f;
-    
     unsigned long length;
     NSRange effectiveRange;
     id attributeValue;
