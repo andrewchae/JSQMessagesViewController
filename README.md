@@ -40,6 +40,10 @@ pod 'JSQMessagesViewController', :git => 'https://github.com/jessesquires/JSQMes
 
 ## Getting Started
 
+````
+#import <JSQMessagesViewController/JSQMessages.h>    // import all headers
+````
+
 * **Demo project**
   * There's a fucking sweet demo project: `JSQMessages.xcworkspace`.
   * Run `pod install` first.
@@ -76,6 +80,8 @@ Support the development of this **free**, open-source library!
 <h4><a href="mailto:jesse.squires.developer@gmail.com?cc=cash@square.com&subject=$25&body=Thanks for developing JSQMessagesViewController!">Send $25</a> <em>I want new features!</em></h4>
 <h4><a href="mailto:jesse.squires.developer@gmail.com?cc=cash@square.com&subject=$50&body=Thanks for developing JSQMessagesViewController!">Send $50</a> <em>I love this project!</em></h4>
 
+*Can't use Square Cash? Message me about donating via [Amazon Payments](https://payments.amazon.com/home). I hate PayPal.*
+
 ## Credits
 
 Created by [**@jesse_squires**](https://twitter.com/jesse_squires), a [programming-motherfucker](http://programming-motherfucker.com).
@@ -95,9 +101,12 @@ Check out my work at [Hexed Bits](http://bit.ly/0x29A).
 ## Apps using this library
 
 * [Hemoglobe](http://bit.ly/hemoglobeapp)
+* [ClassDojo](https://itunes.apple.com/us/app/classdojo/id552602056)
 * [Schools App](https://itunes.apple.com/us/app/schools-app/id495845755)
+* [Kytt](https://itunes.apple.com/de/app/kytt-neue-leute-in-der-umgebung/id848959696)
 * [Spark Social](https://itunes.apple.com/us/app/spark-social/id823785892)
 * [Spabbit](https://itunes.apple.com/us/app/spabbit/id737363908)
+* [Elodie](https://itunes.apple.com/app/elodie/id821610181)
 * [Instaply](https://itunes.apple.com/us/app/instaply/id558562920)
 * [Loopse](https://itunes.apple.com/us/app/loopse-spots-friends-sessions/id704783915)
 * [Oxwall Messenger](https://github.com/tochman/OxwallMessenger)
@@ -106,6 +115,7 @@ Check out my work at [Hexed Bits](http://bit.ly/0x29A).
 * [Libraries for developers](https://itunes.apple.com/us/app/libraries-for-developers/id653427112)
 * [Buhz|Hyve](http://itunes.apple.com/us/app/buhz-hyve/id818568956)
 * [AwesomeChat](https://github.com/relatedcode/AwesomeChat)
+* *Your app here*
 
 ## License
 

@@ -27,7 +27,9 @@
 
 #import "JSQMessagesCollectionView.h"
 #import "JSQMessagesCollectionViewCell.h"
+
 #import "JSQMessagesCollectionViewLayoutAttributes.h"
+#import "JSQMessagesCollectionViewFlowLayoutInvalidationContext.h"
 
 const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 
@@ -119,6 +121,11 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
     return [JSQMessagesCollectionViewLayoutAttributes class];
 }
 
++ (Class)invalidationContextClass
+{
+    return [JSQMessagesCollectionViewFlowLayoutInvalidationContext class];
+}
+
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -141,46 +148,45 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
         [_dynamicAnimator removeAllBehaviors];
         [_visibleIndexPaths removeAllObjects];
     }
-    
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 - (void)setMessageBubbleFont:(UIFont *)messageBubbleFont
 {
-    NSAssert(messageBubbleFont, @"ERROR: messageBubbleFont must not be nil: %s", __PRETTY_FUNCTION__);
+    NSParameterAssert(messageBubbleFont != nil);
     _messageBubbleFont = messageBubbleFont;
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 - (void)setMessageBubbleLeftRightMargin:(CGFloat)messageBubbleLeftRightMargin
 {
     _messageBubbleLeftRightMargin = messageBubbleLeftRightMargin;
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 - (void)setMessageBubbleTextViewTextContainerInsets:(UIEdgeInsets)messageBubbleTextContainerInsets
 {
     _messageBubbleTextViewTextContainerInsets = messageBubbleTextContainerInsets;
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 - (void)setIncomingAvatarViewSize:(CGSize)incomingAvatarViewSize
 {
     _incomingAvatarViewSize = incomingAvatarViewSize;
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 - (void)setOutgoingAvatarViewSize:(CGSize)outgoingAvatarViewSize
 {
     _outgoingAvatarViewSize = outgoingAvatarViewSize;
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 #pragma mark - Getters
 
 - (CGFloat)itemWidth
 {
-    return self.collectionView.frame.size.width - self.sectionInset.left - self.sectionInset.right;
+    return CGRectGetWidth(self.collectionView.frame) - self.sectionInset.left - self.sectionInset.right;
 }
 
 - (UIDynamicAnimator *)dynamicAnimator
@@ -212,15 +218,23 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 {
     [self.dynamicAnimator removeAllBehaviors];
     [self.visibleIndexPaths removeAllObjects];
-    [self invalidateLayout];
+    [self invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
 }
 
 #pragma mark - Collection view flow layout
 
-- (void)invalidateLayout
+- (void)invalidateLayoutWithContext:(JSQMessagesCollectionViewFlowLayoutInvalidationContext *)context
 {
-    [self.messageBubbleSizes removeAllObjects];
-    [super invalidateLayout];
+    if (context.invalidateDataSourceCounts) {
+        context.invalidateFlowLayoutAttributes = YES;
+        context.invalidateFlowLayoutDelegateMetrics = YES;
+    }
+    
+    if (context.invalidateFlowLayoutAttributes || context.invalidateFlowLayoutDelegateMetrics) {
+        [self.messageBubbleSizes removeAllObjects];
+    }
+    
+    [super invalidateLayoutWithContext:context];
 }
 
 - (void)prepareLayout
@@ -303,8 +317,7 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
                 }
                 
                 CGSize size = self.collectionView.bounds.size;
-                JSQMessagesCollectionViewLayoutAttributes *attributes = [JSQMessagesCollectionViewLayoutAttributes
-                                                                         layoutAttributesForCellWithIndexPath:updateItem.indexPathAfterUpdate];
+                JSQMessagesCollectionViewLayoutAttributes *attributes = [JSQMessagesCollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:updateItem.indexPathAfterUpdate];
                 [self jsq_configureMessageCellLayoutAttributes:attributes];
                 attributes.frame = CGRectMake(0.0f,
                                               size.height - size.width,
@@ -417,10 +430,9 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 - (void)jsq_addNewlyVisibleBehaviorsFromVisibleItems:(NSArray *)visibleItems
 {
     //  a "newly visible" item is in `visibleItems` but not in `self.visibleIndexPaths`
-    NSIndexSet *indexSet = [visibleItems indexesOfObjectsWithOptions:NSEnumerationConcurrent
-                                                         passingTest:^BOOL(UICollectionViewLayoutAttributes *item, NSUInteger index, BOOL *stop) {
-                                                             return ![self.visibleIndexPaths containsObject:item.indexPath];
-                                                         }];
+    NSIndexSet *indexSet = [visibleItems indexesOfObjectsPassingTest:^BOOL(UICollectionViewLayoutAttributes *item, NSUInteger index, BOOL *stop) {
+        return ![self.visibleIndexPaths containsObject:item.indexPath];
+    }];
     
     NSArray *newlyVisibleItems = [visibleItems objectsAtIndexes:indexSet];
     
@@ -437,11 +449,12 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
 - (void)jsq_removeNoLongerVisibleBehaviorsFromVisibleItemsIndexPaths:(NSSet *)visibleItemsIndexPaths
 {
     NSArray *behaviors = self.dynamicAnimator.behaviors;
-    NSIndexSet *indexSet = [behaviors indexesOfObjectsWithOptions:NSEnumerationConcurrent
-                                                      passingTest:^BOOL(UIAttachmentBehavior *springBehaviour, NSUInteger index, BOOL *stop) {
-                                                          UICollectionViewLayoutAttributes *layoutAttributes = [springBehaviour.items firstObject];
-                                                          return ![visibleItemsIndexPaths containsObject:layoutAttributes.indexPath];
-                                                      }];
+    
+    NSIndexSet *indexSet = [behaviors indexesOfObjectsPassingTest:^BOOL(UIAttachmentBehavior *springBehaviour, NSUInteger index, BOOL *stop) {
+        UICollectionViewLayoutAttributes *layoutAttributes = [springBehaviour.items firstObject];
+        return ![visibleItemsIndexPaths containsObject:layoutAttributes.indexPath];
+    }];
+    
     NSArray *behaviorsToRemove = [self.dynamicAnimator.behaviors objectsAtIndexes:indexSet];
     
     [behaviorsToRemove enumerateObjectsUsingBlock:^(UIAttachmentBehavior *springBehaviour, NSUInteger index, BOOL *stop) {

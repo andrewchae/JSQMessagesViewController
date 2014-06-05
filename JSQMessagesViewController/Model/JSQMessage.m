@@ -31,15 +31,26 @@
                       sender:(NSString *)sender
                         date:(NSDate *)date
 {
-    NSAssert(text, @"ERROR: text must not be nil: %s", __PRETTY_FUNCTION__);
-    NSAssert(sender, @"ERROR: sender must not be nil: %s", __PRETTY_FUNCTION__);
-    NSAssert(date, @"ERROR: date must not be nil: %s", __PRETTY_FUNCTION__);
+    NSParameterAssert(text != nil);
+    NSParameterAssert(sender != nil);
+    NSParameterAssert(date != nil);
     
-    self = [super init];
+    self = [self init];
     if (self) {
         _text = text;
         _sender = sender;
         _date = date;
+    }
+    return self;
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _text = @"";
+        _sender = @"";
+        _date = [NSDate date];
     }
     return self;
 }

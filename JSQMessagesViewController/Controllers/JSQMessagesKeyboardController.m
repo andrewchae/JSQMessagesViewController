@@ -23,6 +23,9 @@
 
 #import "JSQMessagesKeyboardController.h"
 
+NSString * const JSQMessagesKeyboardControllerNotificationKeyboardDidChangeFrame = @"JSQMessagesKeyboardControllerNotificationKeyboardDidChangeFrame";
+NSString * const JSQMessagesKeyboardControllerUserInfoKeyKeyboardDidChangeFrame = @"JSQMessagesKeyboardControllerUserInfoKeyKeyboardDidChangeFrame";
+
 static void * kJSQMessagesKeyboardControllerKeyValueObservingContext = &kJSQMessagesKeyboardControllerKeyValueObservingContext;
 
 typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
@@ -46,6 +49,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 - (void)jsq_handleKeyboardNotification:(NSNotification *)notification completion:(JSQAnimationCompletionBlock)completion;
 
 - (void)jsq_setKeyboardViewHidden:(BOOL)hidden;
+- (void)jsq_postKeyboardFrameNotificationForFrame:(CGRect)frame;
 
 - (void)jsq_removeKeyboardFrameObserver;
 
@@ -65,9 +69,9 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
                         delegate:(id<JSQMessagesKeyboardControllerDelegate>)delegate
 
 {
-    NSAssert(textView, @"ERROR: textView must not be nil: %s", __PRETTY_FUNCTION__);
-    NSAssert(contextView, @"ERROR: contextView must not be nil: %s", __PRETTY_FUNCTION__);
-    NSAssert(panGestureRecognizer, @"ERROR: panGestureRecognizer must not be nil: %s", __PRETTY_FUNCTION__);
+    NSParameterAssert(textView != nil);
+    NSParameterAssert(contextView != nil);
+    NSParameterAssert(panGestureRecognizer != nil);
     
     self = [super init];
     if (self) {
@@ -275,6 +279,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
                         options:animationCurveOption
                      animations:^{
                          [self.delegate keyboardDidChangeFrame:keyboardEndFrame];
+                         [self jsq_postKeyboardFrameNotificationForFrame:keyboardEndFrame];
                      }
                      completion:^(BOOL finished) {
                          if (completion) {
@@ -289,6 +294,13 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 {
     self.keyboardView.hidden = hidden;
     self.keyboardView.userInteractionEnabled = !hidden;
+}
+
+- (void)jsq_postKeyboardFrameNotificationForFrame:(CGRect)frame
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:JSQMessagesKeyboardControllerNotificationKeyboardDidChangeFrame
+                                                        object:self
+                                                      userInfo:@{ JSQMessagesKeyboardControllerUserInfoKeyKeyboardDidChangeFrame : [NSValue valueWithCGRect:frame] }];
 }
 
 #pragma mark - Key-value observing
@@ -310,6 +322,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
             //  KVO is triggered during panning (see below)
             //  panning occurs in contextView coordinates already
             [self.delegate keyboardDidChangeFrame:newKeyboardFrame];
+            [self jsq_postKeyboardFrameNotificationForFrame:newKeyboardFrame];
         }
     }
 }

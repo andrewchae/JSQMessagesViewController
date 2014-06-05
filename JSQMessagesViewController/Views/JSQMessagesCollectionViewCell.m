@@ -41,12 +41,12 @@
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *textViewAvatarHorizontalSpaceConstraint;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *textViewMarginHorizontalSpaceConstraint;
 
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *cellTopLabelHeightContraint;
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *messageBubbleTopLabelHeightContraint;
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *cellBottomLabelHeightContraint;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *cellTopLabelHeightConstraint;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *messageBubbleTopLabelHeightConstraint;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *cellBottomLabelHeightConstraint;
 
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *avatarContainerViewWidthContraint;
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *avatarContainerViewHeightContraint;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *avatarContainerViewWidthConstraint;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *avatarContainerViewHeightConstraint;
 
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *messageBubbleLeftRightMarginConstraint;
 
@@ -62,6 +62,8 @@
 
 - (void)jsq_didReceiveMenuWillHideNotification:(NSNotification *)notification;
 - (void)jsq_didReceiveMenuWillShowNotification:(NSNotification *)notification;
+
+- (void)jsq_updateConstraint:(NSLayoutConstraint *)constraint withConstant:(CGFloat)constant;
 
 @end
 
@@ -92,9 +94,9 @@
     [self setTranslatesAutoresizingMaskIntoConstraints:NO];
     self.backgroundColor = [UIColor whiteColor];
     
-    self.cellTopLabelHeightContraint.constant = 0.0f;
-    self.messageBubbleTopLabelHeightContraint.constant = 0.0f;
-    self.cellBottomLabelHeightContraint.constant = 0.0f;
+    self.cellTopLabelHeightConstraint.constant = 0.0f;
+    self.messageBubbleTopLabelHeightConstraint.constant = 0.0f;
+    self.cellBottomLabelHeightConstraint.constant = 0.0f;
     
     self.avatarViewSize = CGSizeZero;
     
@@ -188,13 +190,27 @@
     
     JSQMessagesCollectionViewLayoutAttributes *customAttributes = (JSQMessagesCollectionViewLayoutAttributes *)layoutAttributes;
     
-    self.textView.font = customAttributes.messageBubbleFont;
-    self.messageBubbleLeftRightMarginConstraint.constant = customAttributes.messageBubbleLeftRightMargin;
+    if (self.textView.font != customAttributes.messageBubbleFont) {
+        self.textView.font = customAttributes.messageBubbleFont;
+    }
+    
+    if (!UIEdgeInsetsEqualToEdgeInsets(self.textView.textContainerInset, customAttributes.textViewTextContainerInsets)) {
+        self.textView.textContainerInset = customAttributes.textViewTextContainerInsets;
+    }
+    
     self.textViewFrameInsets = customAttributes.textViewFrameInsets;
-    self.textView.textContainerInset = customAttributes.textViewTextContainerInsets;
-    self.cellTopLabelHeightContraint.constant = customAttributes.cellTopLabelHeight;
-    self.messageBubbleTopLabelHeightContraint.constant = customAttributes.messageBubbleTopLabelHeight;
-    self.cellBottomLabelHeightContraint.constant = customAttributes.cellBottomLabelHeight;
+
+    [self jsq_updateConstraint:self.messageBubbleLeftRightMarginConstraint
+                  withConstant:customAttributes.messageBubbleLeftRightMargin];
+    
+    [self jsq_updateConstraint:self.cellTopLabelHeightConstraint
+                  withConstant:customAttributes.cellTopLabelHeight];
+    
+    [self jsq_updateConstraint:self.messageBubbleTopLabelHeightConstraint
+                  withConstant:customAttributes.messageBubbleTopLabelHeight];
+    
+    [self jsq_updateConstraint:self.cellBottomLabelHeightConstraint
+                  withConstant:customAttributes.cellBottomLabelHeight];
     
     if ([self isKindOfClass:[JSQMessagesCollectionViewCellIncoming class]]) {
         self.avatarViewSize = customAttributes.incomingAvatarViewSize;
@@ -202,8 +218,6 @@
     else if ([self isKindOfClass:[JSQMessagesCollectionViewCellOutgoing class]]) {
         self.avatarViewSize = customAttributes.outgoingAvatarViewSize;
     }
-    
-    [self setNeedsUpdateConstraints];
 }
 
 #pragma mark - Setters
@@ -273,26 +287,32 @@
 
 - (void)setAvatarViewSize:(CGSize)avatarViewSize
 {
-    self.avatarContainerViewWidthContraint.constant = avatarViewSize.width;
-    self.avatarContainerViewHeightContraint.constant = avatarViewSize.height;
-    [self setNeedsUpdateConstraints];
+    if (CGSizeEqualToSize(avatarViewSize, self.avatarViewSize)) {
+        return;
+    }
+    
+    [self jsq_updateConstraint:self.avatarContainerViewWidthConstraint withConstant:avatarViewSize.width];
+    [self jsq_updateConstraint:self.avatarContainerViewHeightConstraint withConstant:avatarViewSize.height];
 }
 
 - (void)setTextViewFrameInsets:(UIEdgeInsets)textViewFrameInsets
 {
-    self.textViewTopVerticalSpaceConstraint.constant = textViewFrameInsets.top;
-    self.textViewBottomVerticalSpaceConstraint.constant = textViewFrameInsets.bottom;
-    self.textViewAvatarHorizontalSpaceConstraint.constant = textViewFrameInsets.right;
-    self.textViewMarginHorizontalSpaceConstraint.constant = textViewFrameInsets.left;
-    [self setNeedsUpdateConstraints];
+    if (UIEdgeInsetsEqualToEdgeInsets(textViewFrameInsets, self.textViewFrameInsets)) {
+        return;
+    }
+    
+    [self jsq_updateConstraint:self.textViewTopVerticalSpaceConstraint withConstant:textViewFrameInsets.top];
+    [self jsq_updateConstraint:self.textViewBottomVerticalSpaceConstraint withConstant:textViewFrameInsets.bottom];
+    [self jsq_updateConstraint:self.textViewAvatarHorizontalSpaceConstraint withConstant:textViewFrameInsets.right];
+    [self jsq_updateConstraint:self.textViewMarginHorizontalSpaceConstraint withConstant:textViewFrameInsets.left];
 }
 
 #pragma mark - Getters
 
 - (CGSize)avatarViewSize
 {
-    return CGSizeMake(self.avatarContainerViewWidthContraint.constant,
-                      self.avatarContainerViewHeightContraint.constant);
+    return CGSizeMake(self.avatarContainerViewWidthConstraint.constant,
+                      self.avatarContainerViewHeightConstraint.constant);
 }
 
 - (UIEdgeInsets)textViewFrameInsets
@@ -301,6 +321,18 @@
                             self.textViewMarginHorizontalSpaceConstraint.constant,
                             self.textViewBottomVerticalSpaceConstraint.constant,
                             self.textViewAvatarHorizontalSpaceConstraint.constant);
+}
+
+#pragma mark - Utilities
+
+- (void)jsq_updateConstraint:(NSLayoutConstraint *)constraint withConstant:(CGFloat)constant
+{
+    if (constraint.constant == constant) {
+        return;
+    }
+    
+    constraint.constant = constant;
+    [self setNeedsUpdateConstraints];
 }
 
 #pragma mark - UIResponder
