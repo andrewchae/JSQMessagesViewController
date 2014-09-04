@@ -149,6 +149,16 @@
  */
 - (UIImage *) collectionView:(JSQMessagesCollectionView *)collectionView accesoryViewForCellAtIndexPath:(NSIndexPath *)indexPath;
 
+/**
+ *  Asks the data source for the size of the media for the cell at a given indexPath
+ *
+ *  @param collectionView The object representing the collection view requesting this information.
+ *  @param indexPath      The index path that specifies the location of the item.
+ *
+ *  @return The size of the media
+ */
+- (CGSize)collectionView:(JSQMessagesCollectionView *)collectionView mediaSizeForItemAtIndexPath:(NSIndexPath *)indexPath;
+
 @end
 
 #endif

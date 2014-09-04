@@ -403,7 +403,7 @@ const CGFloat kJSQMessagesCollectionViewCellLabelHeightDefault = 20.0f;
         case JSQMessageLocalMediaKind:
         case JSQMessageRemoteMediaKind:
         {
-            finalSize = CGSizeMake(100, 100);
+            finalSize = [self.collectionView.dataSource collectionView:self.collectionView mediaSizeForItemAtIndexPath:indexPath];
         }
             break;
     }
