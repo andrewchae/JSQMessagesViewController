@@ -313,6 +313,12 @@
     [self.accessoryImageView addConstraints:@[widhtConstraint, heightConstraint]];
 }
 
+- (void)setBounds:(CGRect)bounds
+{
+    [super setBounds:bounds];
+    self.contentView.frame = bounds;
+}
+
 #pragma mark - Getters
 
 - (CGSize)avatarViewSize
