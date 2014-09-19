@@ -227,13 +227,13 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     
     double animationDuration = [userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
     
-    CGRect keyboardEndFrameConverted = [self.contextView convertRect:keyboardEndFrame fromView:nil];
+//    CGRect keyboardEndFrameConverted = [self.contextView convertRect:keyboardEndFrame fromView:nil];
     
     [UIView animateWithDuration:animationDuration
                           delay:0.0
                         options:animationCurveOption
                      animations:^{
-                         [self jsq_notifyKeyboardFrameNotificationForFrame:keyboardEndFrameConverted];
+                         [self jsq_notifyKeyboardFrameNotificationForFrame:keyboardEndFrame];
                      }
                      completion:^(BOOL finished) {
                          if (completion) {
@@ -306,8 +306,10 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     
     //  system keyboard is added to a new UIWindow, need to operate in window coordinates
     //  also, keyboard always slides from bottom of screen, not the bottom of a view
+    CGFloat contextViewOffset = CGRectGetMinY(self.contextView.frame);
     CGFloat contextViewWindowHeight = CGRectGetHeight(self.contextView.window.frame);
     if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)) {
+        contextViewOffset = CGRectGetMinX(self.contextView.frame);
         contextViewWindowHeight = CGRectGetWidth(self.contextView.window.frame);
     }
     
@@ -324,7 +326,7 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     switch (pan.state) {
         case UIGestureRecognizerStateChanged:
         {
-            newKeyboardViewFrame.origin.y = touch.y + self.keyboardTriggerPoint.y;
+            newKeyboardViewFrame.origin.y = contextViewOffset + touch.y + self.keyboardTriggerPoint.y;
             
             //  bound frame between bottom of view and height of keyboard
             newKeyboardViewFrame.origin.y = MIN(newKeyboardViewFrame.origin.y, contextViewWindowHeight);
